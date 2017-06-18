@@ -1,0 +1,9 @@
+name: MSH Svg image
+description: Overrides standard image formater and widget to add a support of the SVG files.
+core: 8.x
+type: module
+package: Mega Slam Hoops
+
+dependencies:
+  - msh_site
+  - image
