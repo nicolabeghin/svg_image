@@ -224,12 +224,13 @@ class SvgImageWidget extends FileWidget {
     if (!empty($element['#files']) && $element['#preview_image_style']) {
       $file = reset($element['#files']);
 
-      $variables = msh_svg_image_get_image_file_dimensions($file);
+      $variables = svg_image_get_image_file_dimensions($file);
 
       $variables['style_name'] = $element['#preview_image_style'];
       $variables['uri'] = $file->getFileUri();
 
-      if (msh_svg_image_is_file_svg($file)) {
+      // Add a custom preview for SVG file.
+      if (svg_image_is_file_svg($file)) {
         $element['preview'] = [
           '#weight' => -10,
           '#theme' => 'image',

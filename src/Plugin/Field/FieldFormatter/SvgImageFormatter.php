@@ -80,7 +80,7 @@ class SvgImageFormatter extends ImageFormatter {
         '#theme' => 'image_formatter',
         '#item' => $item,
         '#item_attributes' => $attributes,
-        '#image_style' => msh_svg_image_is_file_svg($file) ? NULL : $imageStyleSetting,
+        '#image_style' => svg_image_is_file_svg($file) ? NULL : $imageStyleSetting,
         '#url' => $url,
         '#cache' => [
           'tags' => $cacheTags,
