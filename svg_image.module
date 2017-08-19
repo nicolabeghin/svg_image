@@ -33,8 +33,7 @@ function svg_image_field_formatter_info_alter(array &$info) {
  *   Dimensions array.
  */
 function svg_image_get_image_file_dimensions(File $file) {
-  /** @var \Drupal\Core\Image\Image $image */
-  $image = \Drupal::service('image.factory')->get($file->getFileUri());
+  $image = \Drupal::getContainer()->get('image.factory')->get($file->getFileUri());
 
   $variables = [];
 
@@ -47,12 +46,21 @@ function svg_image_get_image_file_dimensions(File $file) {
     // We can find out only dimensions of the SVG files.
     if (svg_image_is_file_svg($file)) {
       // Parse SVG as XML.
-      $svg = simplexml_load_string(file_get_contents($file->getFileUri()));
-      $neededVariables = ['width', 'height'];
+      $fileContents = file_get_contents($file->getFileUri());
+      // In some cases file could be not available for the loading. It could be
+      // deleted from the files folder physically, moved to other place or
+      // permissions will not allow to read it. In this case we will just skip
+      // dimensions discovering.
+      if ($fileContents) {
+        $svg = simplexml_load_string($fileContents);
+        $neededVariables = ['width', 'height'];
 
-      foreach ($svg->attributes() as $attribute => $value) {
-        if (in_array($attribute, $neededVariables)) {
-          $variables[$attribute] = (integer) $value;
+        if ($svg) {
+          foreach ($svg->attributes() as $attribute => $value) {
+            if (in_array($attribute, $neededVariables)) {
+              $variables[$attribute] = (integer) $value;
+            }
+          }
         }
       }
     }
