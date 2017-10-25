@@ -3,6 +3,7 @@
 namespace Drupal\svg_image\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\image\Plugin\Field\FieldFormatter\ImageFormatter;
 use Drupal\Core\Cache\Cache;
@@ -61,7 +62,21 @@ class SvgImageFormatter extends ImageFormatter {
       $cacheTags = $imageStyle->getCacheTags();
     }
 
+    $svg_attributes = $this->getSetting('svg_attributes');
+    foreach ($svg_attributes as &$attribute) {
+      if ($attribute) {
+        $attribute .= 'px';
+      }
+    }
+
     foreach ($files as $delta => $file) {
+      $attributes = [];
+      $isSvg = svg_image_is_file_svg($file);
+
+      if ($isSvg) {
+        $attributes = $svg_attributes;
+      }
+
       $cacheContexts = [];
       if (isset($linkFile)) {
         $imageUri = $file->getFileUri();
@@ -73,7 +88,7 @@ class SvgImageFormatter extends ImageFormatter {
       // Extract field item attributes for the theme function, and unset them
       // from the $item so that the field template does not re-render them.
       $item = $file->_referringItem;
-      $attributes = $item->_attributes;
+      $attributes += $item->_attributes;
       unset($item->_attributes);
 
       $elements[$delta] = [
@@ -90,6 +105,48 @@ class SvgImageFormatter extends ImageFormatter {
     }
 
     return $elements;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultSettings() {
+    return [
+        'svg_attributes' => ['width' => '', 'height' => ''],
+      ] + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $element, FormStateInterface $formState) {
+    $element = parent::settingsForm($element, $formState);
+
+    $element['svg_attributes'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('SVG Images dimensions (attributes)'),
+      '#tree' => TRUE,
+    ];
+
+    $element['svg_attributes']['width'] = [
+      '#type' => 'number',
+      '#min' => 0,
+      '#title' => $this->t('Width'),
+      '#size' => 10,
+      '#field_suffix' => 'px',
+      '#default_value' => $this->getSetting('svg_attributes')['width'],
+    ];
+
+    $element['svg_attributes']['height'] = [
+      '#type' => 'number',
+      '#min' => 0,
+      '#title' => $this->t('Height'),
+      '#size' => 10,
+      '#field_suffix' => 'px',
+      '#default_value' => $this->getSetting('svg_attributes')['height'],
+    ];
+
+    return $element;
   }
 
 }
