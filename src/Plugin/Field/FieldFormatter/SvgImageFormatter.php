@@ -4,6 +4,7 @@ namespace Drupal\svg_image\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\image\Plugin\Field\FieldFormatter\ImageFormatter;
 use Drupal\Core\Cache\Cache;
@@ -68,7 +69,6 @@ class SvgImageFormatter extends ImageFormatter {
         $attribute .= 'px';
       }
     }
-
     foreach ($files as $delta => $file) {
       $attributes = [];
       $isSvg = svg_image_is_file_svg($file);
@@ -88,20 +88,46 @@ class SvgImageFormatter extends ImageFormatter {
       // Extract field item attributes for the theme function, and unset them
       // from the $item so that the field template does not re-render them.
       $item = $file->_referringItem;
-      $attributes += $item->_attributes;
-      unset($item->_attributes);
 
-      $elements[$delta] = [
-        '#theme' => 'image_formatter',
-        '#item' => $item,
-        '#item_attributes' => $attributes,
-        '#image_style' => svg_image_is_file_svg($file) ? NULL : $imageStyleSetting,
-        '#url' => $url,
-        '#cache' => [
-          'tags' => $cacheTags,
-          'contexts' => $cacheContexts,
-        ],
-      ];
+      if (isset($item->_attributes)) {
+        $attributes += $item->_attributes;
+      }
+
+      unset($item->_attributes);
+      $isSvg = svg_image_is_file_svg($file);
+
+      if (empty($url)) {
+        $url = $file->getFileUri();
+      }
+
+      if (!$isSvg /*|| $this->getSetting('svg_render_as_image')*/) {
+        $elements[$delta] = [
+          '#theme' => 'image_formatter',
+          '#item' => $item,
+          '#item_attributes' => $attributes,
+          '#image_style' => $isSvg ? NULL : $imageStyleSetting,
+          '#url' => $url,
+          '#cache' => [
+            'tags' => $cacheTags,
+            'contexts' => $cacheContexts,
+          ],
+        ];
+      }
+
+      else {
+        // Render as SVG tag.
+        $svgRaw = file_get_contents($url);
+        $svgRaw = str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $svgRaw);
+        $svgRaw = trim($svgRaw);
+
+        $elements[$delta] = [
+          '#markup' => $svgRaw,
+          '#cache' => [
+            'tags' => $cacheTags,
+            'contexts' => $cacheContexts,
+          ],
+        ];
+      }
     }
 
     return $elements;
@@ -112,7 +138,7 @@ class SvgImageFormatter extends ImageFormatter {
    */
   public static function defaultSettings() {
     return [
-        'svg_attributes' => ['width' => '', 'height' => ''],
+        'svg_attributes' => ['width' => '', 'height' => ''], 'svg_render_as_image' => TRUE,
       ] + parent::defaultSettings();
   }
 
@@ -121,6 +147,13 @@ class SvgImageFormatter extends ImageFormatter {
    */
   public function settingsForm(array $element, FormStateInterface $formState) {
     $element = parent::settingsForm($element, $formState);
+
+    $element['svg_render_as_image'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Render SVG image as &lt;img&rt;'),
+      '#description' => $this->t('Render SVG images as usual image in IMG tag instead of &lt;svg&rt; tag'),
+      '#default_value' => $this->getSetting('svg_render_as_image'),
+    ];
 
     $element['svg_attributes'] = [
       '#type' => 'fieldset',
