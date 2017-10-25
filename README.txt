@@ -9,9 +9,16 @@ CONTENTS OF THIS FILE
 
 INTRODUCTION
 ------------
-This module changes default image field widget and formatter to allow use SVG image with the standard Image field.
 
-Using SVG Image module you will not need to use another field to use SVG image instead of the already created Image field.
+SVG image module allow to download SVG image into the already created Image
+fields. So - SVG images could be used exactly as another images - PNG/JPEG etc.
+
+Other modules:
+
+* SVG image field (https://www.drupal.org/project/svg_image_field)
+  Provides another field type used for SVG image uploading.
+* SVG Formatter (https://www.drupal.org/project/svg_formatter)
+  Module adds ability to display field with type "file" as SVG image.
 
 REQUIREMENTS
 ------------
