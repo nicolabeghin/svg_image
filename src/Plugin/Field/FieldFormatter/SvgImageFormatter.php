@@ -100,7 +100,7 @@ class SvgImageFormatter extends ImageFormatter {
         $url = $file->getFileUri();
       }
 
-      if (!$isSvg /*|| $this->getSetting('svg_render_as_image')*/) {
+      if (!$isSvg || $this->getSetting('svg_render_as_image')) {
         $elements[$delta] = [
           '#theme' => 'image_formatter',
           '#item' => $item,
