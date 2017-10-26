@@ -96,10 +96,6 @@ class SvgImageFormatter extends ImageFormatter {
       unset($item->_attributes);
       $isSvg = svg_image_is_file_svg($file);
 
-      if (empty($url)) {
-        $url = $file->getFileUri();
-      }
-
       if (!$isSvg || $this->getSetting('svg_render_as_image')) {
         $elements[$delta] = [
           '#theme' => 'image_formatter',
@@ -113,15 +109,14 @@ class SvgImageFormatter extends ImageFormatter {
           ],
         ];
       }
-
       else {
         // Render as SVG tag.
-        $svgRaw = file_get_contents($url);
+        $svgRaw = file_get_contents($file->getFileUri());
         $svgRaw = str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $svgRaw);
         $svgRaw = trim($svgRaw);
 
         $elements[$delta] = [
-          '#markup' => $svgRaw,
+          '#markup' => Markup::create($svgRaw),
           '#cache' => [
             'tags' => $cacheTags,
             'contexts' => $cacheContexts,
