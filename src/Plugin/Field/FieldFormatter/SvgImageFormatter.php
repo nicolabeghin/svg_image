@@ -64,11 +64,6 @@ class SvgImageFormatter extends ImageFormatter {
     }
 
     $svg_attributes = $this->getSetting('svg_attributes');
-    foreach ($svg_attributes as &$attribute) {
-      if ($attribute) {
-        $attribute .= 'px';
-      }
-    }
     foreach ($files as $delta => $file) {
       $attributes = [];
       $isSvg = svg_image_is_file_svg($file);
