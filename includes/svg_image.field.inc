@@ -57,6 +57,7 @@ function svg_image_field_formatter_info() {
 
   // Add SVG Image related settings.
   $image_field['label'] = t('Image (SVG Support)');
+  $image_field['settings']['svg_render_inline']=FALSE;
   $image_field['settings']['svg_settings'] = array(
     'width' => '',
     'height' => '',
@@ -80,6 +81,13 @@ function svg_image_field_formatter_settings_form($field, $instance, $view_mode, 
     '#tree' => TRUE,
   );
 
+  $element['svg_render_inline'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Render SVG image as &lt;svg&gt;'),
+    '#description' => t('Render SVG images inline instead of &lt;img&gt; tag'),
+	'#default_value' => $settings['svg_render_as_image']
+  );
+  
   $element['svg_settings']['width'] = array(
     '#type' => 'textfield',
     '#title' => t('Width'),
@@ -109,15 +117,43 @@ function svg_image_field_formatter_settings_summary($field, $instance, $view_mod
   if (!empty($formatter_settings['svg_settings']['width'])
     || !empty($formatter_settings['svg_settings']['width'])) {
     $summary[] = t(
-      'SVG images attributes: <br /> Width: @widthpx,<br /> Height: @heightpx',
+      'SVG mode: @svg_render_inline<br />SVG images attributes: <br /> Width: @widthpx,<br /> Height: @heightpx',
       array(
         '@width' => (int) $formatter_settings['svg_settings']['width'],
         '@height' => (int) $formatter_settings['svg_settings']['height'],
+		'@svg_render_inline' => !empty($formatter_settings['svg_render_inline'])?'Inline':'Image',
       )
     );
   }
 
   return implode('<br />', $summary);
+}
+
+/**
+ * Returns an SVG file content as string
+ */
+function svg_image_get_content($uri) {
+  // Safety check.
+  if (!svg_image_is_svg($uri)) {
+    return FALSE;
+  }
+
+  // Return cached dimensions if already retrieved once this request.
+  $cached_images = &drupal_static(__FUNCTION__, array());
+  if (isset($cached_images[$uri])) {
+    return $cached_images[$uri];
+  }
+
+  $svgRaw = file_get_contents($uri);
+
+  // strip out SVG XML header
+  $svgRaw = str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $svgRaw);
+  $svgRaw = trim($svgRaw);
+  
+  // Save values to static cache.
+  $cached_images[$uri] = $svgRaw;
+  
+  return $svgRaw;
 }
 
 /**
@@ -155,12 +191,18 @@ function svg_image_field_formatter_view($entity_type, $entity, $field, $instance
       }
     }
 
-    $element[$delta] = array(
-      '#theme' => 'image_formatter',
-      '#item' => $item,
-      '#image_style' => $is_svg === FALSE ? $display['settings']['image_style'] : '',
-      '#path' => isset($uri) ? $uri : '',
-    );
+	if ($is_svg) {
+	    $element[$delta] = array(
+	      '#markup' => svg_image_get_content($item['uri'])
+	    );		
+	} else {
+	    $element[$delta] = array(
+	      '#theme' => 'image_formatter',
+	      '#item' => $item,
+	      '#image_style' => $is_svg === FALSE ? $display['settings']['image_style'] : '',
+	      '#path' => isset($uri) ? $uri : '',
+	    );
+	}
   }
 
   return $element;
